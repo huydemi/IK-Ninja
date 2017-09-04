@@ -23,8 +23,19 @@
 import SpriteKit
 
 class GameScene: SKScene {
+  // You create two SKNode properties to reference the shadow node and lower torso node (the root node of the ninja), respectively.
+  var shadow: SKNode!
+  var lowerTorso: SKNode!
   
   override func didMove(to view: SKView) {
+    // You obtain a reference to the lower torso node by its name, “torso_lower”, and assign its value to the lowerTorso property. 
+    // Next, you set its position to the center of the screen with an offset of -30 units.
+    lowerTorso = childNode(withName: "torso_lower")
+    lowerTorso.position = CGPoint(x: frame.midX, y: frame.midY - 30)
     
+    // Similarly, you grab a reference to the shadow node by its name, “shadow”, and assign its value to the shadow property. 
+    // Finally, you set its position to the center of the screen with an offset of -100 units.
+    shadow  = childNode(withName: "shadow")
+    shadow.position = CGPoint(x: frame.midX, y: frame.midY - 100)
   }
 }
