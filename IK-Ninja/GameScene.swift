@@ -27,6 +27,10 @@ class GameScene: SKScene {
   var shadow: SKNode!
   var lowerTorso: SKNode!
   
+  var upperTorso: SKNode!
+  var upperArmFront: SKNode!
+  var lowerArmFront: SKNode!
+  
   override func didMove(to view: SKView) {
     // You obtain a reference to the lower torso node by its name, “torso_lower”, and assign its value to the lowerTorso property. 
     // Next, you set its position to the center of the screen with an offset of -30 units.
@@ -37,5 +41,26 @@ class GameScene: SKScene {
     // Finally, you set its position to the center of the screen with an offset of -100 units.
     shadow  = childNode(withName: "shadow")
     shadow.position = CGPoint(x: frame.midX, y: frame.midY - 100)
+    
+    upperTorso = lowerTorso.childNode(withName: "torso_upper")
+    upperArmFront = upperTorso.childNode(withName: "arm_upper_front")
+    lowerArmFront = upperArmFront.childNode(withName: "arm_lower_front")
   }
+  
+  func punchAt(_ location: CGPoint) {
+    // reach(to:rootNode:duration:) is an action responsible for performing inverse kinematics actions for a joint hierarchy reaching out to a point in space.
+    // It takes in three arguments: (1) the desired end position to reach; (2) the highest node of the hierarchy that you want to rotate; and (3) the duration of the animation.
+    let punch = SKAction.reach(to: location, rootNode: upperArmFront, duration: 0.1)
+    // Next, you run the action on the end node that is going to reach out to touch the end position in space, which in this case is the lower arm.
+    lowerArmFront.run(punch)
+  }
+  
+  // Upon a touch event, you run the punch action with the tap location as the end position that you want the lower arm to reach.
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    for touch: AnyObject in touches {
+      let location = touch.location(in: self)
+      punchAt(location)
+    }
+  }
+  
 }
