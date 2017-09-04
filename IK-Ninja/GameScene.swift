@@ -25,6 +25,8 @@ import SpriteKit
 class GameScene: SKScene {
   let upperArmAngleDeg: CGFloat = -10
   let lowerArmAngleDeg: CGFloat = 130
+  let upperLegAngleDeg: CGFloat = 22
+  let lowerLegAngleDeg: CGFloat = -30
   
   // You create two SKNode properties to reference the shadow node and lower torso node (the root node of the ninja), respectively.
   var shadow: SKNode!
@@ -46,6 +48,10 @@ class GameScene: SKScene {
   var firstTouch = false
   var lastSpawnTimeInterval: TimeInterval = 0
   var lastUpdateTimeInterval: TimeInterval = 0
+  
+  var upperLeg: SKNode!
+  var lowerLeg: SKNode!
+  var foot: SKNode!
   
   override func didMove(to view: SKView) {
     // You obtain a reference to the lower torso node by its name, “torso_lower”, and assign its value to the lowerTorso property. 
@@ -69,6 +75,10 @@ class GameScene: SKScene {
     
     head = upperTorso.childNode(withName: "head")
     
+    upperLeg = lowerTorso.childNode(withName: "leg_upper_back")
+    lowerLeg = upperLeg.childNode(withName: "leg_lower_back")
+    foot = lowerLeg.childNode(withName: "foot_back")
+    
     let rotationConstraintArm = SKReachConstraints(lowerAngleLimit: CGFloat(0), upperAngleLimit: CGFloat(160))
     lowerArmFront.reachConstraints = rotationConstraintArm
     lowerArmBack.reachConstraints = rotationConstraintArm
@@ -85,6 +95,9 @@ class GameScene: SKScene {
     orientToNodeConstraint.enabled = false
     // Finally, you add the two constraints to the head node.
     head.constraints = [orientToNodeConstraint, rotationConstraint]
+    
+    lowerLeg.reachConstraints = SKReachConstraints(lowerAngleLimit: CGFloat(-45).degreesToRadians(), upperAngleLimit: 0)
+    upperLeg.reachConstraints = SKReachConstraints(lowerAngleLimit: CGFloat(-45).degreesToRadians(), upperAngleLimit: CGFloat(160).degreesToRadians())
   }
   
   // This first function is similar to the version you had previously, except that it now lets you specify the arm nodes as arguments. This enables you to use the same function for both the left and right arms.
@@ -126,7 +139,13 @@ class GameScene: SKScene {
       lowerTorso.xScale =
         location.x < frame.midX ? abs(lowerTorso.xScale) * -1 : abs(lowerTorso.xScale)
       
-      punchAt(location)
+      let lower = location.y < lowerTorso.position.y + 10
+      if lower {
+        kickAt(location)
+      }
+      else {
+        punchAt(location)
+      }
       
       targetNode.position = location
     }
@@ -220,6 +239,19 @@ class GameScene: SKScene {
       }
     }
     return checkIntersection
+  }
+  
+  func kickAt(_ location: CGPoint) {
+    let kick = SKAction.reach(to: location, rootNode: upperLeg, duration: 0.1)
+    
+    let restore = SKAction.run {
+      self.upperLeg.run(SKAction.rotate(toAngle: self.upperLegAngleDeg.degreesToRadians(), duration: 0.1))
+      self.lowerLeg.run(SKAction.rotate(toAngle: self.lowerLegAngleDeg.degreesToRadians(), duration: 0.1))
+    }
+    
+    let checkIntersection = intersectionCheckAction(for: foot)
+    
+    foot.run(SKAction.sequence([kick, checkIntersection, restore]))
   }
   
 }
