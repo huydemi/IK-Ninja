@@ -92,6 +92,10 @@ class GameScene: SKScene {
   override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
     for touch: AnyObject in touches {
       let location = touch.location(in: self)
+      
+      lowerTorso.xScale =
+        location.x < frame.midX ? abs(lowerTorso.xScale) * -1 : abs(lowerTorso.xScale)
+      
       punchAt(location)
     }
   }
