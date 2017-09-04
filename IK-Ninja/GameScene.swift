@@ -47,6 +47,9 @@ class GameScene: SKScene {
     upperArmFront = upperTorso.childNode(withName: "arm_upper_front")
     lowerArmFront = upperArmFront.childNode(withName: "arm_lower_front")
     fistFront = lowerArmFront.childNode(withName: "fist_front")
+    
+    let rotationConstraintArm = SKReachConstraints(lowerAngleLimit: CGFloat(0), upperAngleLimit: CGFloat(160))
+    lowerArmFront.reachConstraints = rotationConstraintArm
   }
   
   func punchAt(_ location: CGPoint) {
