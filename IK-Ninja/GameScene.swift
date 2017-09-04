@@ -110,7 +110,7 @@ class GameScene: SKScene {
     scoreLabel.fontSize = 20
     scoreLabel.horizontalAlignmentMode = .left
     scoreLabel.verticalAlignmentMode = .top
-    scoreLabel.position = CGPoint(x: 10, y: size.height -  10)
+    scoreLabel.position = CGPoint(x: 50, y: size.height -  10)
     addChild(scoreLabel)
     
     // setup lives label
@@ -119,7 +119,7 @@ class GameScene: SKScene {
     livesLabel.fontSize = 20
     livesLabel.horizontalAlignmentMode = .right
     livesLabel.verticalAlignmentMode = .top
-    livesLabel.position = CGPoint(x: size.width - 10, y: size.height - 10)
+    livesLabel.position = CGPoint(x: size.width - 50, y: size.height - 10)
     addChild(livesLabel)
   }
   
