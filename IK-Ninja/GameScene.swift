@@ -35,6 +35,12 @@ class GameScene: SKScene {
   var lowerArmFront: SKNode!
   var fistFront: SKNode!
   
+  var upperArmBack: SKNode!
+  var lowerArmBack: SKNode!
+  var fistBack: SKNode!
+  
+  var rightPunch = true
+  
   override func didMove(to view: SKView) {
     // You obtain a reference to the lower torso node by its name, “torso_lower”, and assign its value to the lowerTorso property. 
     // Next, you set its position to the center of the screen with an offset of -30 units.
@@ -51,23 +57,35 @@ class GameScene: SKScene {
     lowerArmFront = upperArmFront.childNode(withName: "arm_lower_front")
     fistFront = lowerArmFront.childNode(withName: "fist_front")
     
+    upperArmBack = upperTorso.childNode(withName: "arm_upper_back")
+    lowerArmBack = upperArmBack.childNode(withName: "arm_lower_back")
+    fistBack = lowerArmBack.childNode(withName: "fist_back")
+    
     let rotationConstraintArm = SKReachConstraints(lowerAngleLimit: CGFloat(0), upperAngleLimit: CGFloat(160))
     lowerArmFront.reachConstraints = rotationConstraintArm
+    lowerArmBack.reachConstraints = rotationConstraintArm
+  }
+  
+  // This first function is similar to the version you had previously, except that it now lets you specify the arm nodes as arguments. This enables you to use the same function for both the left and right arms.
+  func punchAt(_ location: CGPoint, upperArmNode: SKNode, lowerArmNode: SKNode, fistNode: SKNode) {
+    let punch = SKAction.reach(to: location, rootNode: upperArmNode, duration: 0.2)
+    let restore = SKAction.run {
+      upperArmNode.run(SKAction.rotate(toAngle: self.upperArmAngleDeg.degreesToRadians(), duration: 0.1))
+      lowerArmNode.run(SKAction.rotate(toAngle: self.lowerArmAngleDeg.degreesToRadians(), duration: 0.1))
+    }
+    fistNode.run(SKAction.sequence([punch, restore]))
   }
   
   func punchAt(_ location: CGPoint) {
-    // The punch action is the same reaching action you defined before—it animates the joint hierarchy to reach out to a desired position.
-    let punch = SKAction.reach(to: location, rootNode: upperArmFront, duration: 0.2)
-    
-    // The restore action animates the restoration of the joint hierarchy to its rest pose. Unfortunately, inverse kinematics actions don’t have reversed actions, so here, you resort to using the traditional forward kinematics to rotate the joint angles back to their rest angles.
-    // Within this action, you run rotateToAngle() actions concurrently on both the upper and lower arm nodes to restore them to their rest angles as defined by upperArmAngleDeg and lowerArmAngleDeg, respectively. degreesToRadians is defined in a category on CGFloat to convert values between degrees and radians. You can find the function in CGFloat+Extensions.swift, included in the SKTUtils source folder.
-    let restore = SKAction.run {
-      self.upperArmFront.run(SKAction.rotate(toAngle: self.upperArmAngleDeg.degreesToRadians(), duration: 0.1))
-      self.lowerArmFront.run(SKAction.rotate(toAngle: self.lowerArmAngleDeg.degreesToRadians(), duration: 0.1))
+    // In the second function, you simply check if it’s time to use the left or the right arm based on the value of the rightPunch Boolean, and execute the actions accordingly.
+    if rightPunch {
+      punchAt(location, upperArmNode: upperArmFront, lowerArmNode: lowerArmFront, fistNode: fistFront)
     }
-    
-    // Finally, you concatenate the two actions, punch and restore, into a sequenced action, which you then run on the fist.
-    fistFront.run(SKAction.sequence([punch, restore]))
+    else {
+      punchAt(location, upperArmNode: upperArmBack, lowerArmNode: lowerArmBack, fistNode: fistBack)
+    }
+    // Finally, you toggle the rightPunch flag such that when the function is called again on the next tap, the Boolean flag is flipped accordingly, allowing you to alternate between the two arms.
+    rightPunch = !rightPunch
   }
   
   // Upon a touch event, you run the punch action with the tap location as the end position that you want the lower arm to reach.
