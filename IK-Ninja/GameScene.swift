@@ -30,6 +30,7 @@ class GameScene: SKScene {
   var upperTorso: SKNode!
   var upperArmFront: SKNode!
   var lowerArmFront: SKNode!
+  var fistFront: SKNode!
   
   override func didMove(to view: SKView) {
     // You obtain a reference to the lower torso node by its name, “torso_lower”, and assign its value to the lowerTorso property. 
@@ -45,6 +46,7 @@ class GameScene: SKScene {
     upperTorso = lowerTorso.childNode(withName: "torso_upper")
     upperArmFront = upperTorso.childNode(withName: "arm_upper_front")
     lowerArmFront = upperArmFront.childNode(withName: "arm_lower_front")
+    fistFront = lowerArmFront.childNode(withName: "fist_front")
   }
   
   func punchAt(_ location: CGPoint) {
@@ -52,7 +54,7 @@ class GameScene: SKScene {
     // It takes in three arguments: (1) the desired end position to reach; (2) the highest node of the hierarchy that you want to rotate; and (3) the duration of the animation.
     let punch = SKAction.reach(to: location, rootNode: upperArmFront, duration: 0.1)
     // Next, you run the action on the end node that is going to reach out to touch the end position in space, which in this case is the lower arm.
-    lowerArmFront.run(punch)
+    fistFront.run(punch)
   }
   
   // Upon a touch event, you run the punch action with the tap location as the end position that you want the lower arm to reach.
