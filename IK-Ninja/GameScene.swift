@@ -23,6 +23,9 @@
 import SpriteKit
 
 class GameScene: SKScene {
+  let upperArmAngleDeg: CGFloat = -10
+  let lowerArmAngleDeg: CGFloat = 130
+  
   // You create two SKNode properties to reference the shadow node and lower torso node (the root node of the ninja), respectively.
   var shadow: SKNode!
   var lowerTorso: SKNode!
@@ -53,11 +56,18 @@ class GameScene: SKScene {
   }
   
   func punchAt(_ location: CGPoint) {
-    // reach(to:rootNode:duration:) is an action responsible for performing inverse kinematics actions for a joint hierarchy reaching out to a point in space.
-    // It takes in three arguments: (1) the desired end position to reach; (2) the highest node of the hierarchy that you want to rotate; and (3) the duration of the animation.
-    let punch = SKAction.reach(to: location, rootNode: upperArmFront, duration: 0.1)
-    // Next, you run the action on the end node that is going to reach out to touch the end position in space, which in this case is the lower arm.
-    fistFront.run(punch)
+    // The punch action is the same reaching action you defined before—it animates the joint hierarchy to reach out to a desired position.
+    let punch = SKAction.reach(to: location, rootNode: upperArmFront, duration: 0.2)
+    
+    // The restore action animates the restoration of the joint hierarchy to its rest pose. Unfortunately, inverse kinematics actions don’t have reversed actions, so here, you resort to using the traditional forward kinematics to rotate the joint angles back to their rest angles.
+    // Within this action, you run rotateToAngle() actions concurrently on both the upper and lower arm nodes to restore them to their rest angles as defined by upperArmAngleDeg and lowerArmAngleDeg, respectively. degreesToRadians is defined in a category on CGFloat to convert values between degrees and radians. You can find the function in CGFloat+Extensions.swift, included in the SKTUtils source folder.
+    let restore = SKAction.run {
+      self.upperArmFront.run(SKAction.rotate(toAngle: self.upperArmAngleDeg.degreesToRadians(), duration: 0.1))
+      self.lowerArmFront.run(SKAction.rotate(toAngle: self.lowerArmAngleDeg.degreesToRadians(), duration: 0.1))
+    }
+    
+    // Finally, you concatenate the two actions, punch and restore, into a sequenced action, which you then run on the fist.
+    fistFront.run(SKAction.sequence([punch, restore]))
   }
   
   // Upon a touch event, you run the punch action with the tap location as the end position that you want the lower arm to reach.
