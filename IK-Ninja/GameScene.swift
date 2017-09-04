@@ -44,6 +44,8 @@ class GameScene: SKScene {
   
   var rightPunch = true
   var firstTouch = false
+  var lastSpawnTimeInterval: TimeInterval = 0
+  var lastUpdateTimeInterval: TimeInterval = 0
   
   override func didMove(to view: SKView) {
     // You obtain a reference to the lower torso node by its name, “torso_lower”, and assign its value to the lowerTorso property. 
@@ -92,7 +94,8 @@ class GameScene: SKScene {
       upperArmNode.run(SKAction.rotate(toAngle: self.upperArmAngleDeg.degreesToRadians(), duration: 0.1))
       lowerArmNode.run(SKAction.rotate(toAngle: self.lowerArmAngleDeg.degreesToRadians(), duration: 0.1))
     }
-    fistNode.run(SKAction.sequence([punch, restore]))
+    let checkIntersection = intersectionCheckAction(for: fistNode)
+    fistNode.run(SKAction.sequence([punch, checkIntersection, restore]))
   }
   
   func punchAt(_ location: CGPoint) {
@@ -127,6 +130,96 @@ class GameScene: SKScene {
       
       targetNode.position = location
     }
+  }
+  
+  func addShuriken() {
+    // You create a brand new sprite node from the projectile.png image.
+    let shuriken = SKSpriteNode(imageNamed: "projectile")
+    // You set the spawn height of the shuriken to a value between 60 units below and 130 units above the lower torso. This ensures the shuriken will be within reach of the ninja.
+    let minY = lowerTorso.position.y - 60 + shuriken.size.height/2
+    let maxY = lowerTorso.position.y  + 140 - shuriken.size.height/2
+    let rangeY = maxY - minY
+    let actualY = CGFloat(arc4random()).truncatingRemainder(dividingBy: rangeY) + minY
+    // You set the x-position of the shuriken to be either slightly left or slightly right of the screen.
+    let left = arc4random() % 2
+    let actualX = (left == 0) ? -shuriken.size.width/2 : size.width + shuriken.size.width/2
+    // You then set the position of the shuriken based on the values determined in steps 2 and 3. You also assign the hard-coded name "shuriken" to the node before adding it as a child to the scene.
+    shuriken.position = CGPoint(x: actualX, y: actualY)
+    shuriken.name = "shuriken"
+    shuriken.zPosition = 1
+    addChild(shuriken)
+    // You randomize the move duration of the shuriken to be between 4 and 6 seconds to add some sense of variance to the game.
+    let minDuration = 4.0
+    let maxDuration = 6.0
+    let rangeDuration = maxDuration - minDuration
+    let actualDuration = Double(arc4random()).truncatingRemainder(dividingBy: rangeDuration) + minDuration
+    // You define a sequence of two actions to run on the shuriken. The first action moves the shuriken toward the center of the screen based on the duration defined in step 5. The second action removes the shuriken once it reaches the center of the screen.
+    let actionMove = SKAction.move(to: CGPoint(x: size.width/2, y: actualY), duration: actualDuration)
+    let actionMoveDone = SKAction.removeFromParent()
+    shuriken.run(SKAction.sequence([actionMove, actionMoveDone]))
+    // Concurrently, you rotate the shuriken continuously in the direction of its motion for a more realistic effect.
+    let angle = left == 0 ? CGFloat(-90).degreesToRadians() : CGFloat(90).degreesToRadians()
+    let rotate = SKAction.repeatForever(SKAction.rotate(byAngle: angle, duration: 0.2))
+    shuriken.run(SKAction.repeatForever(rotate))
+  }
+  
+  func updateWithTimeSinceLastUpdate(timeSinceLast: CFTimeInterval) {
+    lastSpawnTimeInterval = timeSinceLast + lastSpawnTimeInterval
+    if lastSpawnTimeInterval > 0.75 {
+      lastSpawnTimeInterval = 0
+      addShuriken()
+    }
+  }
+  
+  override func update(_ currentTime: CFTimeInterval) {
+    var timeSinceLast = currentTime - lastUpdateTimeInterval
+    lastUpdateTimeInterval = currentTime
+    if timeSinceLast > 1.0 {
+      timeSinceLast = 1.0 / 60.0
+      lastUpdateTimeInterval = currentTime
+    }
+    updateWithTimeSinceLastUpdate(timeSinceLast: timeSinceLast)
+  }
+  
+  func intersectionCheckAction(for effectorNode: SKNode) -> SKAction {
+    let checkIntersection = SKAction.run {
+      
+      for object: AnyObject in self.children {
+        // check for intersection against any sprites named "shuriken"
+        if let node = object as? SKSpriteNode {
+          if node.name == "shuriken" {
+            // convert coordinates into common system based on root node
+            let effectorInNode = self.convert(effectorNode.position, from:effectorNode.parent!)
+            var shurikenFrame = node.frame
+            shurikenFrame.origin = self.convert(shurikenFrame.origin, from: node.parent!)
+            
+            if shurikenFrame.contains(effectorInNode) {
+              // play a hit sound
+              self.run(SKAction.playSoundFileNamed("hit.mp3", waitForCompletion: false))
+              
+              // show a spark effect
+              let spark = SKSpriteNode(imageNamed: "spark")
+              spark.position = node.position
+              spark.zPosition = 60
+              self.addChild(spark)
+              let fadeAndScaleAction = SKAction.group([
+                SKAction.fadeOut(withDuration: 0.2),
+                SKAction.scale(to: 0.1, duration: 0.2)])
+              let cleanUpAction = SKAction.removeFromParent()
+              spark.run(SKAction.sequence([fadeAndScaleAction, cleanUpAction]))
+              
+              // remove the shuriken
+              node.removeFromParent()
+            }
+            else {
+              // play a miss sound
+              self.run(SKAction.playSoundFileNamed("miss.mp3", waitForCompletion: false))
+            }
+          }
+        }
+      }
+    }
+    return checkIntersection
   }
   
 }
