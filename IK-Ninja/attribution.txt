@@ -1,0 +1,5 @@
+Sound effects and background music licensed under Creative Commons Attribution 3.0
+
+1. bg.mp3 - Background Music "Run Amok" by Kevin MacLeod [http://incompetech.com]
+2. hit.mp3 - Hit Sound Effect by Mike Koenig [http://soundbible.com/992-Right-Cross.html]
+3. miss.mp3 - Miss Sound Effect by Mark DiAngelo [http://soundbible.com/2068-Woosh.html]
