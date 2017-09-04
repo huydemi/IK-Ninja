@@ -39,7 +39,11 @@ class GameScene: SKScene {
   var lowerArmBack: SKNode!
   var fistBack: SKNode!
   
+  var head: SKNode!
+  let targetNode = SKNode()
+  
   var rightPunch = true
+  var firstTouch = false
   
   override func didMove(to view: SKView) {
     // You obtain a reference to the lower torso node by its name, “torso_lower”, and assign its value to the lowerTorso property. 
@@ -61,9 +65,24 @@ class GameScene: SKScene {
     lowerArmBack = upperArmBack.childNode(withName: "arm_lower_back")
     fistBack = lowerArmBack.childNode(withName: "fist_back")
     
+    head = upperTorso.childNode(withName: "head")
+    
     let rotationConstraintArm = SKReachConstraints(lowerAngleLimit: CGFloat(0), upperAngleLimit: CGFloat(160))
     lowerArmFront.reachConstraints = rotationConstraintArm
     lowerArmBack.reachConstraints = rotationConstraintArm
+    
+    // You create an orientToNode constraint, passing in targetNode as the node toward which to orient.
+    let orientToNodeConstraint = SKConstraint.orient(to: targetNode, offset: SKRange(constantValue: 0.0))
+    // Here, you define an angle range from -50 degrees to 80 degrees, converted to radians.
+    let range = SKRange(lowerLimit: CGFloat(-50).degreesToRadians(),
+                        upperLimit: CGFloat(80).degreesToRadians())
+    // You define a rotation constraint that limits the zRotation property of the head node to the angle range defined in step 2.
+    let rotationConstraint = SKConstraint.zRotation(range)
+    // You disable the two constraints by default, as there may not be any target node yet.
+    rotationConstraint.enabled = false
+    orientToNodeConstraint.enabled = false
+    // Finally, you add the two constraints to the head node.
+    head.constraints = [orientToNodeConstraint, rotationConstraint]
   }
   
   // This first function is similar to the version you had previously, except that it now lets you specify the arm nodes as arguments. This enables you to use the same function for both the left and right arms.
@@ -90,6 +109,14 @@ class GameScene: SKScene {
   
   // Upon a touch event, you run the punch action with the tap location as the end position that you want the lower arm to reach.
   override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    if !firstTouch {
+      for c in head.constraints! {
+        let constraint = c
+        constraint.enabled = true
+      }
+      firstTouch = true
+    }
+    
     for touch: AnyObject in touches {
       let location = touch.location(in: self)
       
@@ -97,6 +124,8 @@ class GameScene: SKScene {
         location.x < frame.midX ? abs(lowerTorso.xScale) * -1 : abs(lowerTorso.xScale)
       
       punchAt(location)
+      
+      targetNode.position = location
     }
   }
   
