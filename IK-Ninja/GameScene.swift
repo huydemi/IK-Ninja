@@ -44,14 +44,19 @@ class GameScene: SKScene {
   var head: SKNode!
   let targetNode = SKNode()
   
+  var upperLeg: SKNode!
+  var lowerLeg: SKNode!
+  var foot: SKNode!
+  
+  let scoreLabel = SKLabelNode()
+  let livesLabel = SKLabelNode()
+  
   var rightPunch = true
   var firstTouch = false
   var lastSpawnTimeInterval: TimeInterval = 0
   var lastUpdateTimeInterval: TimeInterval = 0
-  
-  var upperLeg: SKNode!
-  var lowerLeg: SKNode!
-  var foot: SKNode!
+  var score: Int = 0
+  var life: Int = 3
   
   override func didMove(to view: SKView) {
     // You obtain a reference to the lower torso node by its name, “torso_lower”, and assign its value to the lowerTorso property. 
@@ -98,6 +103,24 @@ class GameScene: SKScene {
     
     lowerLeg.reachConstraints = SKReachConstraints(lowerAngleLimit: CGFloat(-45).degreesToRadians(), upperAngleLimit: 0)
     upperLeg.reachConstraints = SKReachConstraints(lowerAngleLimit: CGFloat(-45).degreesToRadians(), upperAngleLimit: CGFloat(160).degreesToRadians())
+    
+    // setup score label
+    scoreLabel.fontName = "Chalkduster"
+    scoreLabel.text = "Score: 0"
+    scoreLabel.fontSize = 20
+    scoreLabel.horizontalAlignmentMode = .left
+    scoreLabel.verticalAlignmentMode = .top
+    scoreLabel.position = CGPoint(x: 10, y: size.height -  10)
+    addChild(scoreLabel)
+    
+    // setup lives label
+    livesLabel.fontName = "Chalkduster"
+    livesLabel.text = "Lives: 3"
+    livesLabel.fontSize = 20
+    livesLabel.horizontalAlignmentMode = .right
+    livesLabel.verticalAlignmentMode = .top
+    livesLabel.position = CGPoint(x: size.width - 10, y: size.height - 10)
+    addChild(livesLabel)
   }
   
   // This first function is similar to the version you had previously, except that it now lets you specify the arm nodes as arguments. This enables you to use the same function for both the left and right arms.
@@ -175,7 +198,31 @@ class GameScene: SKScene {
     // You define a sequence of two actions to run on the shuriken. The first action moves the shuriken toward the center of the screen based on the duration defined in step 5. The second action removes the shuriken once it reaches the center of the screen.
     let actionMove = SKAction.move(to: CGPoint(x: size.width/2, y: actualY), duration: actualDuration)
     let actionMoveDone = SKAction.removeFromParent()
-    shuriken.run(SKAction.sequence([actionMove, actionMoveDone]))
+    
+    let hitAction = SKAction.run({
+      // It decrements the number of lives.
+      if self.life > 0 {
+        self.life -= 1
+      }
+      // It accordingly updates the label depicting the number of lives remaining.
+      self.livesLabel.text = "Lives: \(Int(self.life))"
+      
+      // It defines a blink action with fade-in and fade-out durations of 0.05 seconds each.
+      let blink = SKAction.sequence([SKAction.fadeOut(withDuration: 0.05), SKAction.fadeIn(withDuration: 0.05)])
+      
+      // It defines another action running a block that checks if the number of remaining lives has hit zero. If so, the game is over, so the code presents an instance of GameOverScene.
+      let checkGameOverAction = SKAction.run({
+        if self.life <= 0 {
+          let transition = SKTransition.fade(withDuration: 1.0)
+          let gameOverScene = GameOverScene(size: self.size)
+          self.view?.presentScene(gameOverScene, transition: transition)
+        }
+      })
+      // It then runs the actions in steps 3 and 4 in sequence on the lower torso, the root of the ninja.
+      self.lowerTorso.run(SKAction.sequence([blink, blink, checkGameOverAction]))
+    })
+    
+    shuriken.run(SKAction.sequence([actionMove, hitAction, actionMoveDone]))
     // Concurrently, you rotate the shuriken continuously in the direction of its motion for a more realistic effect.
     let angle = left == 0 ? CGFloat(-90).degreesToRadians() : CGFloat(90).degreesToRadians()
     let rotate = SKAction.repeatForever(SKAction.rotate(byAngle: angle, duration: 0.2))
@@ -226,6 +273,9 @@ class GameScene: SKScene {
                 SKAction.scale(to: 0.1, duration: 0.2)])
               let cleanUpAction = SKAction.removeFromParent()
               spark.run(SKAction.sequence([fadeAndScaleAction, cleanUpAction]))
+              
+              self.score += 1
+              self.scoreLabel.text = "Score: \(Int(self.score))"
               
               // remove the shuriken
               node.removeFromParent()
